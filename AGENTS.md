@@ -20,6 +20,13 @@
 - Tooling: `tsgo` (typecheck), `oxlint` + `oxfmt` (lint/format), `vitest` (tests)
 - `pnpm build` / `pnpm dev` (watch) / `pnpm package`
 
+## Pre-commit Checks
+
+After finalizing changes, always run both:
+
+- `pnpm fmt` — auto-fix lint and formatting
+- `pnpm typecheck` — ensure no type errors
+
 ## Icons
 
 See [.agents/docs/icons.md](.agents/docs/icons.md)
