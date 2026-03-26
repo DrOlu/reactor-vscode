@@ -1,0 +1,233 @@
+name: Sync Upstream & Publish
+
+on:
+  schedule:
+    - cron: "0 3 * * *"   # daily at 03:00 UTC
+  workflow_dispatch:        # allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    name: Sync from pi0/pi-vscode
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.compare.outputs.new_version }}
+      upstream_version: ${{ steps.compare.outputs.upstream_version }}
+      has_update: ${{ steps.compare.outputs.has_update }}
+
+    steps:
+      - name: Checkout reactor-vscode
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/pi0/pi-vscode.git || true
+          git fetch upstream main --tags
+
+      - name: Check upstream version vs current
+        id: compare
+        run: |
+          # Get upstream version from their package.json
+          UPSTREAM_VERSION=$(git show upstream/main:package.json | python3 -c "import json,sys; print(json.load(sys.stdin)['version'])")
+          CURRENT_VERSION=$(python3 -c "import json; print(json.load(open('package.json'))['version'])")
+
+          echo "Upstream: $UPSTREAM_VERSION | Current: $CURRENT_VERSION"
+          echo "upstream_version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
+          echo "new_version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "$UPSTREAM_VERSION" != "$CURRENT_VERSION" ]; then
+            echo "has_update=true" >> $GITHUB_OUTPUT
+            echo "🆕 New upstream version: $UPSTREAM_VERSION (current: $CURRENT_VERSION)"
+          else
+            echo "has_update=false" >> $GITHUB_OUTPUT
+            echo "✅ Already up to date at $CURRENT_VERSION"
+          fi
+
+      - name: Apply upstream changes (preserve rebrand)
+        if: steps.compare.outputs.has_update == 'true'
+        run: |
+          git config user.name "Hyperspace Technologies"
+          git config user.email "hyperspace@hyperspace.ng"
+
+          # Collect upstream src/ and bridge/ changes onto our branch
+          # Strategy: cherry-pick or merge only the non-branding files
+          # We merge upstream/main then re-apply our rebrand patch on top
+
+          # 1. Save our rebrand state
+          git stash
+
+          # 2. Merge upstream source changes (conflict = keep ours for branding files)
+          git merge upstream/main \
+            --no-commit \
+            --strategy-option=ours \
+            --allow-unrelated-histories \
+            -m "chore: merge upstream v${{ steps.compare.outputs.upstream_version }}" \
+            || true
+
+          # 3. For source files we want upstream changes, checkout from upstream
+          git checkout upstream/main -- src/ bridge/ rolldown.config.ts tsconfig.json pnpm-lock.yaml || true
+
+          # 4. Restore our rebrand on top
+          git stash pop || true
+
+          # 5. Re-apply our rebrand to package.json (version from upstream, all else ours)
+          python3 << 'PYEOF'
+          import json
+
+          with open('package.json') as f:
+              ours = json.load(f)
+
+          # get upstream pkg for version and any new scripts/deps
+          import subprocess
+          upstream_raw = subprocess.check_output(['git', 'show', 'upstream/main:package.json'])
+          upstream = json.loads(upstream_raw)
+
+          # Take version from upstream
+          ours['version'] = upstream['version']
+
+          # Merge devDependencies (upstream wins for new deps)
+          ours['devDependencies'] = {**upstream.get('devDependencies', {}), **ours.get('devDependencies', {})}
+
+          # Merge scripts (upstream wins for new scripts, ours wins for existing)
+          ours['scripts'] = {**upstream.get('scripts', {}), **ours.get('scripts', {})}
+
+          # Keep all our branding fields intact
+          # (name, displayName, publisher, author, description, repository, contributes etc.)
+
+          with open('package.json', 'w') as f:
+              json.dump(ours, f, indent=2)
+              f.write('\n')
+
+          print(f"Updated package.json version to {ours['version']}")
+          PYEOF
+
+          git add -A
+          git status
+
+      - name: Commit sync
+        if: steps.compare.outputs.has_update == 'true'
+        run: |
+          git config user.name "Hyperspace Technologies"
+          git config user.email "hyperspace@hyperspace.ng"
+
+          git commit -m "chore: sync upstream v${{ steps.compare.outputs.upstream_version }}" \
+            --allow-empty
+          git push origin main
+
+  build:
+    name: Build .vsix
+    needs: sync
+    if: needs.sync.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      vsix_name: ${{ steps.package.outputs.vsix_name }}
+
+    steps:
+      - name: Checkout (after sync commit)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build & Package
+        id: package
+        run: |
+          pnpm package
+          VSIX=$(ls *.vsix | head -1)
+          echo "vsix_name=$VSIX" >> $GITHUB_OUTPUT
+          echo "Packaged: $VSIX"
+          ls -lh *.vsix
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: reactor-vscode-vsix
+          path: "*.vsix"
+          retention-days: 30
+
+  release:
+    name: Create GitHub Release
+    needs: [sync, build]
+    if: needs.sync.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: reactor-vscode-vsix
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ needs.sync.outputs.upstream_version }}"
+          name: "Reactor v${{ needs.sync.outputs.upstream_version }}"
+          body: |
+            🔄 Auto-synced from [pi0/pi-vscode](https://github.com/pi0/pi-vscode) v${{ needs.sync.outputs.upstream_version }}
+
+            **Reactor** — VS Code extension by Hyperspace Technologies  
+            Powered by the Pi coding agent with Reactor branding.
+
+            ## Install
+            ```bash
+            code --install-extension reactor-vscode-${{ needs.sync.outputs.upstream_version }}.vsix
+            ```
+            Or install from the [Open VSX Registry](https://open-vsx.org/extension/HyperspaceTechnologies/reactor-vscode).
+          files: "*.vsix"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-ovsx:
+    name: Publish to Open VSX
+    needs: [sync, build]
+    if: needs.sync.outputs.has_update == 'true' && vars.PUBLISH_OVSX == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: reactor-vscode-vsix
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Publish to Open VSX
+        run: npx ovsx publish *.vsix -p ${{ secrets.OVSX_TOKEN }}
+
+  publish-vscode-marketplace:
+    name: Publish to VS Code Marketplace
+    needs: [sync, build]
+    if: needs.sync.outputs.has_update == 'true' && vars.PUBLISH_MARKETPLACE == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: reactor-vscode-vsix
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Publish to VS Code Marketplace
+        run: npx @vscode/vsce publish --packagePath *.vsix
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
