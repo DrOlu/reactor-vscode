@@ -39,8 +39,8 @@ export async function activate(context: vscode.ExtensionContext) {
   participant.iconPath = logoIcon;
 
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusBarItem.text = "$(pi-logo) Pi";
-  statusBarItem.tooltip = "Open Pi Terminal";
+  statusBarItem.text = "$(reactor-logo) Reactor";
+  statusBarItem.tooltip = "Open Reactor Terminal";
   statusBarItem.command = "pi-vscode.open";
   statusBarItem.show();
 

@@ -39,8 +39,8 @@
   },
   "contributes": {
     "icons": {
-      "pi-logo": {
-        "description": "Pi logo icon",
+      "reactor-logo": {
+        "description": "Reactor logo icon",
         "default": {
           "fontPath": "assets/fonts/pi-icons.woff2",
           "fontCharacter": "\\F101"
@@ -105,7 +105,7 @@
         {
           "id": "pi-vscode.terminal-profile",
           "title": "Reactor",
-          "icon": "pi-logo"
+          "icon": "reactor-logo"
         }
       ]
     },
