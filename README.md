@@ -1,22 +1,20 @@
-# pi-vscode
+# Reactor
 
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/pi0.pi-vscode?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=pi0.pi-vscode) [![Open VSX](https://img.shields.io/open-vsx/v/pi0/pi-vscode?label=Open%20VSX&color=purple)](https://open-vsx.org/extension/pi0/pi-vscode)
+[![Open VSX](https://img.shields.io/open-vsx/v/HyperspaceTechnologies/reactor-vscode?label=Open%20VSX&color=purple)](https://open-vsx.org/extension/HyperspaceTechnologies/reactor-vscode)
 
-Minimal VS Code extension for [pi coding agent](https://pi.dev/).
+VS Code extension for [Reactor coding agent](https://pi.dev/) by [Hyperspace Technologies](https://hyperspace.ng).
 
 ## Features
 
-- **Terminal-based** — Opens pi as an integrated terminal with full TUI/PTY support (opens beside the editor)
-- **VS Code bridge** — Bundles a pi extension and local bridge so pi can query live editor state
-- **Editor awareness** — pi can inspect the active editor, current/latest selection, open editors, workspace folders, and VS Code diagnostics (LSP / lint / type errors)
-- **Status bar button** — PI button in the status bar for quick access
-- **Open with file context** — Send current file path and line range (or cursor position) to pi, available from the editor title bar
-- **Send selection** — Send selected text directly to the pi terminal
-- **`@pi` chat participant** — Use `@pi` in VS Code Chat for streamed RPC-backed replies while keeping the terminal workflow for normal Pi sessions
-- **Package manager** — Browse, search, install, and uninstall pi packages from the sidebar with live output streaming and cancel support; automatically detects package capabilities (extensions, skills, prompts, themes)
-- **Auto-detection** — Finds the pi binary automatically from common paths (`~/.bun/bin`, `~/.local/bin`, `~/.npm-global/bin`)
-
-<img width="945" height="725" alt="image" src="https://github.com/user-attachments/assets/91dbaca4-6d27-490a-8395-94a9c4d07625" />
+- **Terminal-based** — Opens Reactor as an integrated terminal with full TUI/PTY support (opens beside the editor)
+- **VS Code bridge** — Bundles a Reactor extension and local bridge so Reactor can query live editor state
+- **Editor awareness** — Reactor can inspect the active editor, current/latest selection, open editors, workspace folders, and VS Code diagnostics (LSP / lint / type errors)
+- **Status bar button** — Reactor button in the status bar for quick access
+- **Open with file context** — Send current file path and line range (or cursor position) to Reactor, available from the editor title bar
+- **Send selection** — Send selected text directly to the Reactor terminal
+- **`@pi` chat participant** — Use `@pi` in VS Code Chat for streamed RPC-backed replies while keeping the terminal workflow for normal Reactor sessions
+- **Package manager** — Browse, search, install, and uninstall Reactor packages from the sidebar with live output streaming and cancel support; automatically detects package capabilities (extensions, skills, prompts, themes)
+- **Auto-detection** — Finds the Reactor binary automatically from common paths (`~/.bun/bin`, `~/.local/bin`, `~/.npm-global/bin`)
 
 ## Requirements
 
@@ -25,33 +23,39 @@ Minimal VS Code extension for [pi coding agent](https://pi.dev/).
 
 ## Install
 
-Available on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=pi0.pi-vscode) and [Open VSX](https://open-vsx.org/extension/pi0/pi-vscode):
+Available on [Open VSX](https://open-vsx.org/extension/HyperspaceTechnologies/reactor-vscode):
 
 ```bash
 # VS Code / Cursor
-ext install pi0.pi-vscode
+ext install HyperspaceTechnologies.reactor-vscode
 
 # Open VSX (VSCodium, etc.)
-ovsx get pi0.pi-vscode
+ovsx get HyperspaceTechnologies.reactor-vscode
+```
+
+Or download the `.vsix` directly from [GitHub Releases](https://github.com/DrOlu/reactor-vscode/releases):
+
+```bash
+code --install-extension reactor-vscode-0.0.8.vsix
 ```
 
 ## Commands
 
-| Command              | Keybinding       | Description                       |
-| -------------------- | ---------------- | --------------------------------- |
-| `Pi: Open`           | `Ctrl+Alt+3`     | Open or focus the pi terminal     |
-| `Pi: Open with File` | Editor title bar | Open pi with current file context |
-| `Pi: Send Selection` | —                | Send selected text to pi terminal |
+| Command                    | Keybinding       | Description                              |
+| -------------------------- | ---------------- | ---------------------------------------- |
+| `Reactor: Open`            | `Ctrl+Alt+3`     | Open or focus the Reactor terminal       |
+| `Reactor: Open with File`  | Editor title bar | Open Reactor with current file context   |
+| `Reactor: Send Selection`  | —                | Send selected text to Reactor terminal   |
 
 ## Sidebar
 
-The **Pi** activity bar icon opens a sidebar with:
+The **Reactor** activity bar icon opens a sidebar with:
 
 - **Packages view** — Search the npm registry for `pi-package` packages, see capability labels (extensions, skills, prompts, themes), install/uninstall with live streamed output, and cancel in-progress operations
 
-## Bridge tools exposed to pi
+## Bridge tools exposed to Reactor
 
-Each pi terminal launched by the extension loads a bundled pi extension that can call back into live VS Code APIs.
+Each Reactor terminal launched by the extension loads a bundled extension that can call back into live VS Code APIs.
 
 ### Inspection tools
 
@@ -88,20 +92,10 @@ Each pi terminal launched by the extension loads a bundled pi extension that can
 | `vscode_clear_notifications`  | Clears the buffered bridge notification queue                                                    |
 | `vscode_show_notification`    | Shows an info, warning, or error notification inside VS Code                                     |
 
-### Notes
-
-- Paths accepted by file-based bridge tools can be absolute or workspace-relative.
-- `vscode_get_code_actions` accepts either `selection` or explicit `start` / `end` positions.
-- `vscode_execute_code_action` only works with an `actionId` returned by the most recent `vscode_get_code_actions` calls while that cached entry still exists.
-- `vscode_apply_workspace_edit` applies one or more `{ filePath, range, newText }` replacements via VS Code rather than editing files behind the editor's back.
-- `vscode_format_range` accepts either `selection` or explicit `start` / `end` positions.
-- `vscode_format_document` / `vscode_format_range` use VS Code formatting providers and apply formatter-generated `TextEdit[]` results with `workspace.applyEdit`, which is safer for open or dirty buffers than shelling out.
-- `vscode_get_notifications` supports `since` and `limit` parameters for incremental polling.
-
-These bridge tools let pi inspect selections, diagnostics, symbols, definitions, declarations, implementations, hover/type info, workspace-wide symbol search, references, quick-fix availability, dirty state, and recent IDE events, while also safely opening files, saving buffers, applying workspace edits, formatting open buffers through VS Code providers, running VS Code code actions, and surfacing notifications back to the user.
+These bridge tools let Reactor inspect selections, diagnostics, symbols, definitions, declarations, implementations, hover/type info, workspace-wide symbol search, references, quick-fix availability, dirty state, and recent IDE events, while also safely opening files, saving buffers, applying workspace edits, formatting open buffers through VS Code providers, running VS Code code actions, and surfacing notifications back to the user.
 
 ## Configuration
 
-| Setting          | Default | Description                                             |
-| ---------------- | ------- | ------------------------------------------------------- |
-| `pi-vscode.path` | `""`    | Absolute path to the pi binary (auto-detected if empty) |
+| Setting             | Default | Description                                                              |
+| ------------------- | ------- | ------------------------------------------------------------------------ |
+| `pi-vscode.path`    | `""`    | Absolute path to the Reactor binary (auto-detected if empty)             |
