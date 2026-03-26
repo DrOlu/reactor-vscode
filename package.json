@@ -1,8 +1,8 @@
 {
-  "name": "pi-vscode",
-  "displayName": "Pi Coding Agent",
+  "name": "reactor-vscode",
+  "displayName": "Reactor",
   "version": "0.0.8",
-  "description": "VS Code extension for pi coding agent",
+  "description": "VS Code extension for Reactor coding agent",
   "categories": [
     "AI",
     "Chat"
@@ -10,9 +10,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pi0/pi-vscode"
+    "url": "https://github.com/DrOlu/reactor-vscode"
   },
-  "publisher": "pi0",
+  "publisher": "HyperspaceTechnologies",
   "type": "module",
   "main": "./dist/extension.cjs",
   "scripts": {
@@ -50,16 +50,16 @@
     "chatParticipants": [
       {
         "id": "pi-vscode.chat",
-        "fullName": "Pi Coding Agent",
+        "fullName": "Reactor",
         "name": "pi",
-        "description": "Chat with Pi coding agent",
+        "description": "Chat with Reactor coding agent",
         "isSticky": true
       }
     ],
     "commands": [
       {
         "command": "pi-vscode.open",
-        "title": "Pi: Open",
+        "title": "Reactor: Open",
         "icon": {
           "light": "assets/logo-light.svg",
           "dark": "assets/logo.svg"
@@ -67,7 +67,7 @@
       },
       {
         "command": "pi-vscode.openWithFile",
-        "title": "Pi: Open with File",
+        "title": "Reactor: Open with File",
         "icon": {
           "light": "assets/logo-light.svg",
           "dark": "assets/logo.svg"
@@ -75,11 +75,11 @@
       },
       {
         "command": "pi-vscode.sendSelection",
-        "title": "Pi: Send Selection"
+        "title": "Reactor: Send Selection"
       },
       {
         "command": "pi-vscode.openInNewWindow",
-        "title": "Pi: Open in New Window",
+        "title": "Reactor: Open in New Window",
         "icon": {
           "light": "assets/logo-light.svg",
           "dark": "assets/logo.svg"
@@ -104,7 +104,7 @@
       "profiles": [
         {
           "id": "pi-vscode.terminal-profile",
-          "title": "Pi",
+          "title": "Reactor",
           "icon": "pi-logo"
         }
       ]
@@ -113,7 +113,7 @@
       "activitybar": [
         {
           "id": "pi",
-          "title": "Pi",
+          "title": "Reactor",
           "icon": "assets/logo.svg"
         }
       ]
@@ -128,7 +128,7 @@
       ]
     },
     "configuration": {
-      "title": "Pi",
+      "title": "Reactor",
       "properties": {
         "pi-vscode.path": {
           "type": "string",
@@ -151,5 +151,9 @@
   "engines": {
     "vscode": "^1.110.0"
   },
-  "packageManager": "pnpm@10.32.1"
+  "packageManager": "pnpm@10.32.1",
+  "author": {
+    "name": "Hyperspace Technologies",
+    "email": "hyperspace@hyperspace.ng"
+  }
 }
