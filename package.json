@@ -1,8 +1,8 @@
 {
   "name": "reactor-vscode",
   "displayName": "Reactor",
-  "version": "0.0.8",
-  "description": "VS Code extension for Reactor coding agent",
+  "version": "0.1.0",
+  "description": "Reactor Extension for neuralOS by Hyperspace Technologies",
   "categories": [
     "AI",
     "Chat"
@@ -52,7 +52,7 @@
         "id": "pi-vscode.chat",
         "fullName": "Reactor",
         "name": "pi",
-        "description": "Chat with Reactor coding agent",
+        "description": "Chat with Reactor for neuralOS",
         "isSticky": true
       }
     ],

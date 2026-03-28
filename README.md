@@ -2,7 +2,7 @@
 
 [![Open VSX](https://img.shields.io/open-vsx/v/HyperspaceTechnologies/reactor-vscode?label=Open%20VSX&color=purple)](https://open-vsx.org/extension/HyperspaceTechnologies/reactor-vscode)
 
-VS Code extension for [Reactor coding agent](https://pi.dev/) by [Hyperspace Technologies](https://hyperspace.ng).
+Reactor Extension for [neuralOS](https://neural.ng) by [Hyperspace Technologies](https://hyperspace.ng).
 
 ## Features
 
