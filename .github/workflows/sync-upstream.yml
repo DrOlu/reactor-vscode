@@ -127,7 +127,8 @@ jobs:
           git add -A
           git status
           NEW_VERSION=$(python3 -c "import json; print(json.load(open('package.json'))['version'])")
-          git commit -m "chore: sync upstream ${{ steps.compare.outputs.upstream_sha[:7] }} → v${NEW_VERSION}" \
+          SHORT_SHA=$(echo "${{ steps.compare.outputs.upstream_sha }}" | cut -c1-7)
+          git commit -m "chore: sync upstream ${SHORT_SHA} -> v${NEW_VERSION}" \
             --allow-empty
           git push origin main
 
