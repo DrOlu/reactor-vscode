@@ -39,17 +39,23 @@ jobs:
         id: compare
         run: |
           UPSTREAM_VERSION=$(git show upstream/main:package.json | python3 -c "import json,sys; print(json.load(sys.stdin)['version'])")
+          UPSTREAM_SHA=$(git rev-parse upstream/main)
           CURRENT_VERSION=$(python3 -c "import json; print(json.load(open('package.json'))['version'])")
 
-          echo "Upstream: $UPSTREAM_VERSION | Current: $CURRENT_VERSION"
-          echo "upstream_version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
+          # Store last synced SHA in repo (create if missing)
+          LAST_SHA=$(cat .upstream-sha 2>/dev/null || echo "none")
 
-          if [ "$UPSTREAM_VERSION" != "$CURRENT_VERSION" ]; then
+          echo "Upstream: $UPSTREAM_VERSION ($UPSTREAM_SHA)"
+          echo "Current:  $CURRENT_VERSION | Last synced SHA: $LAST_SHA"
+          echo "upstream_version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
+          echo "upstream_sha=$UPSTREAM_SHA" >> $GITHUB_OUTPUT
+
+          if [ "$UPSTREAM_SHA" != "$LAST_SHA" ]; then
             echo "has_update=true" >> $GITHUB_OUTPUT
-            echo "🆕 New upstream version: $UPSTREAM_VERSION (was: $CURRENT_VERSION)"
+            echo "🆕 Upstream has new commits since last sync"
           else
             echo "has_update=false" >> $GITHUB_OUTPUT
-            echo "✅ Already up to date at $CURRENT_VERSION — nothing to do"
+            echo "✅ Already in sync with upstream — nothing to do"
           fi
 
       - name: Merge upstream src & configs (preserve our rebrand)
@@ -72,7 +78,7 @@ jobs:
         if: steps.compare.outputs.has_update == 'true'
         run: |
           python3 << 'PYEOF'
-          import json, subprocess
+          import json, subprocess, re
 
           with open('package.json') as f:
               ours = json.load(f)
@@ -80,32 +86,48 @@ jobs:
           upstream_raw = subprocess.check_output(['git', 'show', 'upstream/main:package.json'])
           upstream = json.loads(upstream_raw)
 
-          # Take version and engine/runtime fields from upstream
-          ours['version'] = upstream['version']
+          upstream_version = upstream['version']
+
+          # Always bump our patch version to ensure a new unique publishable version.
+          # Our version format: X.Y.Z where X.Y tracks upstream major.minor
+          # and Z is our own patch counter on top.
+          current = ours['version']  # e.g. "0.1.2"
+          parts = current.split('.')
+          up_parts = upstream_version.split('.')
+
+          # If upstream version changed, adopt it as our base and reset our patch to 0
+          if up_parts[:2] != parts[:2]:
+              new_version = f"{up_parts[0]}.{up_parts[1]}.0"
+          else:
+              # Same upstream base — increment our patch counter
+              new_version = f"{parts[0]}.{parts[1]}.{int(parts[2]) + 1}"
+
+          ours['version'] = new_version
           ours['engines'] = upstream.get('engines', ours.get('engines', {}))
-          ours['packageManager'] = upstream.get('packageManager', ours.get('packageManager'))
 
-          # Merge devDependencies (upstream wins for new deps, ours wins for conflicts)
-          merged_dev = {**upstream.get('devDependencies', {}), **ours.get('devDependencies', {})}
-          ours['devDependencies'] = merged_dev
+          # Merge devDependencies and scripts (upstream wins for new entries)
+          ours['devDependencies'] = {**upstream.get('devDependencies', {}), **ours.get('devDependencies', {})}
+          ours['scripts'] = {**upstream.get('scripts', {}), **ours.get('scripts', {})}
 
-          # Merge scripts (upstream wins for new scripts)
-          merged_scripts = {**upstream.get('scripts', {}), **ours.get('scripts', {})}
-          ours['scripts'] = merged_scripts
+          # Remove packageManager to avoid corepack self-install issues on CI
+          ours.pop('packageManager', None)
 
           with open('package.json', 'w') as f:
               json.dump(ours, f, indent=2)
               f.write('\n')
 
-          print(f"✅ package.json updated to v{ours['version']}")
+          print(f"✅ package.json: upstream {upstream_version} → our version {new_version}")
           PYEOF
 
       - name: Commit and push sync
         if: steps.compare.outputs.has_update == 'true'
         run: |
+          # Record the upstream SHA we just synced so next run can detect new commits
+          echo "${{ steps.compare.outputs.upstream_sha }}" > .upstream-sha
           git add -A
           git status
-          git commit -m "chore: sync upstream v${{ steps.compare.outputs.upstream_version }}" \
+          NEW_VERSION=$(python3 -c "import json; print(json.load(open('package.json'))['version'])")
+          git commit -m "chore: sync upstream ${{ steps.compare.outputs.upstream_sha[:7] }} → v${NEW_VERSION}" \
             --allow-empty
           git push origin main
 
@@ -133,7 +155,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build & Package
         id: package
