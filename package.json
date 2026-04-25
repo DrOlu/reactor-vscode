@@ -1,7 +1,7 @@
 {
   "name": "reactor-vscode",
   "displayName": "Reactor",
-  "version": "0.0.9",
+  "version": "0.1.2",
   "description": "Reactor Extension for neuralOS by Hyperspace Technologies",
   "categories": [
     "AI",
@@ -151,7 +151,6 @@
   "engines": {
     "vscode": "^1.110.0"
   },
-  "packageManager": "pnpm@10.32.1",
   "author": {
     "name": "Hyperspace Technologies",
     "email": "hyperspace@hyperspace.ng"
